@@ -79,9 +79,11 @@ def index():
             duty = float(request.form["duty_cycle"])
 
             if mode == "Q":
+                # Val è tempo: calcola Q = (V * t * DC) / Z
                 Q = (V * val * duty) / Z
                 result = f"Carica (Q): {Q:.4f} C"
             elif mode == "t":
+                # Val è Q: calcola t = (Q * Z) / (V * DC)
                 t = (val * Z) / (V * duty)
                 result = f"Tempo (t): {t:.2f} s"
         except Exception as e:
