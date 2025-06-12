@@ -2,7 +2,7 @@ from flask import Flask, render_template_string, request
 
 app = Flask(__name__)
 
-# HTML template con interfaccia responsive
+# HTML template con interfaccia responsive e campo per duty cycle
 HTML = """
 <!doctype html>
 <html lang="it">
@@ -54,6 +54,9 @@ HTML = """
       <label>Tempo (s) o Carica (C):</label>
       <input type="number" step="any" name="time_or_charge" required>
 
+      <label>Duty cycle (decimale, es. 0.04 standard PRF):</label>
+      <input type="number" step="any" name="duty_cycle" value="0.04" required>
+
       <button type="submit">Calcola</button>
     </form>
 
@@ -73,18 +76,18 @@ def index():
             V = float(request.form["voltage"])
             Z = float(request.form["impedance"])
             val = float(request.form["time_or_charge"])
+            duty = float(request.form["duty_cycle"])
 
             if mode == "Q":
-                Q = (V * val) / Z
-                result = f"Carica (Q): {Q:.2f} C"
+                Q = (V * val * duty) / Z
+                result = f"Carica (Q): {Q:.4f} C"
             elif mode == "t":
-                t = (val * Z) / V
+                t = (val * Z) / (V * duty)
                 result = f"Tempo (t): {t:.2f} s"
         except Exception as e:
             result = "Errore nei dati inseriti."
 
     return render_template_string(HTML, result=result)
 
-# Necessario per esecuzione locale, ma compatibile con gunicorn
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
