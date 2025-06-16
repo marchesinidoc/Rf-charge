@@ -1,95 +1,50 @@
-from flask import Flask, render_template_string, request
+def calculate_charge(V, R, t_total, freq=2.0, ton_ms=200):
+    # Convert on-time from ms to seconds
+    ton = ton_ms / 1000.0
+    # Calculate duty cycle
+    period = 1 / freq
+    duty_cycle = ton / period
+    # Calculate current
+    I = V / R
+    # Calculate charge
+    Q = I * t_total * duty_cycle
+    return Q
 
-app = Flask(__name__)
+def calculate_time_from_charge(V, R, Q_target, freq=2.0, ton_ms=200):
+    # Convert on-time from ms to seconds
+    ton = ton_ms / 1000.0
+    # Calculate duty cycle
+    period = 1 / freq
+    duty_cycle = ton / period
+    # Calculate current
+    I = V / R
+    # Calculate time needed
+    t_needed = Q_target / (I * duty_cycle)
+    return t_needed
 
-# HTML template con interfaccia responsive e campo per duty cycle
-HTML = """
-<!doctype html>
-<html lang="it">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calcolatore Carica RF</title>
-    <style>
-      body {
-        font-family: Arial, sans-serif;
-        margin: 20px;
-        max-width: 500px;
-        padding: 10px;
-      }
-      input, select, button {
-        padding: 10px;
-        margin: 10px 0;
-        width: 100%;
-        box-sizing: border-box;
-        font-size: 1rem;
-      }
-      h2 {
-        font-size: 1.4rem;
-        text-align: center;
-      }
-      .result {
-        margin-top: 20px;
-        font-weight: bold;
-        color: blue;
-        text-align: center;
-      }
-    </style>
-  </head>
-  <body>
-    <h2>Calcolatore Carica Elettrica RF</h2>
-    <form method="post">
-      <label>Modalità:</label>
-      <select name="mode">
-        <option value="Q">Calcola Q (Carica)</option>
-        <option value="t">Calcola t (Tempo)</option>
-      </select>
+def main():
+    print("Calcolo della carica nella radiofrequenza pulsata")
+    mode = input("Vuoi calcolare la carica (C) o il tempo necessario (T)? [C/T]: ").strip().upper()
 
-      <label>Tensione (V):</label>
-      <input type="number" step="any" name="voltage" required>
+    V = float(input("Inserisci la tensione (Volt): "))
+    R = float(input("Inserisci l'impedenza (Ohm): "))
 
-      <label>Impedenza (Z in Ohm):</label>
-      <input type="number" step="any" name="impedance" required>
+    freq = input("Inserisci la frequenza (Hz) [predefinito = 2]: ").strip()
+    freq = float(freq) if freq else 2.0
 
-      <label>Tempo (s) o Carica (C):</label>
-      <input type="number" step="any" name="time_or_charge" required>
+    ton_ms = input("Inserisci la durata ON di ogni ciclo (ms) [predefinito = 200]: ").strip()
+    ton_ms = float(ton_ms) if ton_ms else 200.0
 
-      <label>Duty cycle (decimale, es. 0.04 standard PRF):</label>
-      <input type="number" step="any" name="duty_cycle" value="0.04" required>
-
-      <button type="submit">Calcola</button>
-    </form>
-
-    {% if result %}
-      <div class="result">{{ result }}</div>
-    {% endif %}
-  </body>
-</html>
-"""
-
-@app.route("/", methods=["GET", "POST"])
-def index():
-    result = None
-    if request.method == "POST":
-        try:
-            mode = request.form["mode"]
-            V = float(request.form["voltage"])
-            Z = float(request.form["impedance"])
-            val = float(request.form["time_or_charge"])
-            duty = float(request.form["duty_cycle"])
-
-            if mode == "Q":
-                # Val è tempo: calcola Q = (V * t * DC) / Z
-                Q = (V * val * duty) / Z
-                result = f"Carica (Q): {Q:.4f} C"
-            elif mode == "t":
-                # Val è Q: calcola t = (Q * Z) / (V * DC)
-                t = (val * Z) / (V * duty)
-                result = f"Tempo (t): {t:.2f} s"
-        except Exception as e:
-            result = "Errore nei dati inseriti."
-
-    return render_template_string(HTML, result=result)
+    if mode == "C":
+        t_total = float(input("Inserisci il tempo di erogazione (secondi): "))
+        Q = calculate_charge(V, R, t_total, freq, ton_ms)
+        print(f"Carica erogata: {Q:.6f} Coulomb")
+    elif mode == "T":
+        Q_target = float(input("Inserisci la carica desiderata (Coulomb): "))
+        t_needed = calculate_time_from_charge(V, R, Q_target, freq, ton_ms)
+        print(f"Tempo necessario: {t_needed:.2f} secondi")
+    else:
+        print("Scelta non valida. Usa 'C' per carica o 'T' per tempo.")
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    main()
