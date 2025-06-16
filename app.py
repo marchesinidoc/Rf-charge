@@ -1,36 +1,41 @@
 import streamlit as st
 
-st.set_page_config(page_title="Calcolo Carica RF", layout="centered")
+def calculate_charge(V, R, f, t_total, t_on_start, t_on_end, pct_start):
+    p = pct_start / 100.0
+    n_cycles = f * t_total
+    energy_start = (V**2 / R) * t_on_start
+    energy_end = (V**2 / R) * t_on_end
+    Q = n_cycles * (p * energy_start + (1 - p) * energy_end)
+    return Q
 
-st.title("Calcolo della Carica in Radiofrequenza Pulsata")
+def calculate_time(V, R, f, Q_target, t_on_start):
+    energy_per_cycle = (V**2 / R) * t_on_start
+    cycles_needed = Q_target / energy_per_cycle
+    t_needed = cycles_needed / f
+    return t_needed
 
-# Selezione modalità
-mode = st.radio("Seleziona modalità di calcolo", ["Calcola Carica (C)", "Calcola Tempo (s)"])
+st.title("Calcolo della Carica o del Tempo nella Radiofrequenza Pulsata")
 
-# Inserimento parametri
-V = st.number_input("Tensione (Volt)", min_value=0.0, value=65.0)
-R = st.number_input("Impedenza (Ohm)", min_value=0.1, value=350.0)
-freq = st.number_input("Frequenza (Hz)", min_value=0.1, value=2.0)
-ton_ms = st.number_input("Durata ON per ciclo (ms)", min_value=1.0, value=20.0)
+mode = st.radio("Vuoi calcolare la carica o il tempo necessario?", ("Carica (C)", "Tempo (T)"))
 
-# Calcoli base
-ton = ton_ms / 1000.0
-period = 1 / freq
-duty = ton / period
-I = V / R
+V = st.number_input("Tensione (Volt)", min_value=1.0, value=65.0)
+R = st.number_input("Resistenza (Ohm)", min_value=1.0, value=350.0)
+f = st.number_input("Frequenza (Hz)", min_value=0.1, value=2.0)
 
-# Controllo consistenza duty cycle
-if duty > 1:
-    st.error("Errore: la durata ON supera il periodo. Riduci 'ton' o aumenta la frequenza.")
-else:
-    if mode == "Calcola Carica (C)":
-        t = st.number_input("Tempo totale di erogazione (secondi)", min_value=0.0, value=300.0)
-        Q = I * t * duty
-        st.success(f"Carica erogata: **{Q:.6f} Coulomb**")
-    else:
-        Q_target = st.number_input("Carica desiderata (Coulomb)", min_value=0.0, value=2.0)
-        if I * duty == 0:
-            st.error("Errore: corrente o duty cycle nullo. Controlla i parametri.")
-        else:
-            t_needed = Q_target / (I * duty)
-            st.success(f"Tempo necessario: **{t_needed:.2f} secondi**")
+if mode == "Carica (C)":
+    t_total = st.number_input("Tempo totale di erogazione (secondi)", min_value=1.0, value=300.0)
+    t_on_start = st.number_input("Tempo ON iniziale (secondi)", min_value=0.001, value=0.02)
+    t_on_end = st.number_input("Tempo ON finale (secondi)", min_value=0.001, value=0.005)
+    pct_start = st.slider("Percentuale del tempo a parametri iniziali", 0, 100, 70)
+
+    if st.button("Calcola Carica"):
+        Q = calculate_charge(V, R, f, t_total, t_on_start, t_on_end, pct_start)
+        st.success(f"Carica totale erogata: {Q:.2f} Coulomb")
+
+elif mode == "Tempo (T)":
+    Q_target = st.number_input("Carica desiderata (Coulomb)", min_value=0.01, value=10.0)
+    t_on_start = st.number_input("Tempo ON stimato (secondi)", min_value=0.001, value=0.02)
+
+    if st.button("Calcola Tempo"):
+        t_needed = calculate_time(V, R, f, Q_target, t_on_start)
+        st.success(f"Tempo necessario stimato: {t_needed:.2f} secondi")
