@@ -3,8 +3,5 @@ services:
     name: rf-charge-app
     env: python
     plan: free
-    buildCommand: "pip install -r requirements.txt"
-    startCommand: "gunicorn app:app"
-    envVars:
-      - key: FLASK_ENV
-        value: production
+    buildCommand: pip install -r requirements.txt
+    startCommand: streamlit run app.py --server.port $PORT
