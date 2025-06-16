@@ -3,13 +3,13 @@ import streamlit as st
 def calculate_charge(V, R, f, t_total, t_on_start, t_on_end, pct_start):
     p = pct_start / 100.0
     n_cycles = f * t_total
-    energy_start = (V**2 / R) * t_on_start
-    energy_end = (V**2 / R) * t_on_end
-    Q = n_cycles * (p * energy_start + (1 - p) * energy_end)
+    current = V / R
+    Q = n_cycles * current * (p * t_on_start + (1 - p) * t_on_end)
     return Q
 
 def calculate_time(V, R, f, Q_target, t_on_start):
-    energy_per_cycle = (V**2 / R) * t_on_start
+    current = V / R
+    energy_per_cycle = current * t_on_start
     cycles_needed = Q_target / energy_per_cycle
     t_needed = cycles_needed / f
     return t_needed
