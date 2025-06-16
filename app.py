@@ -39,3 +39,4 @@ elif mode == "Tempo (T)":
     if st.button("Calcola Tempo"):
         t_needed = calculate_time(V, R, f, Q_target, t_on_start)
         st.success(f"Tempo necessario stimato: {t_needed:.2f} secondi")
+
